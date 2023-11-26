@@ -76,6 +76,59 @@ def upload():
     
     return render_template("uploaded.html", file_paths=["img/img_normal.jpg"])
 
+def to_dictionary(keys, values):
+    return dict(zip(keys, values))
+
+def process_image(image_path):
+    # Buka citra yang akan diklasifiasi
+    img_object = Image.open(fp=image_path, mode="r")
+
+    # Simpan citra dengan nama file yang sudah ditentukan
+    custom_filename = "color.png"  # Replace with your desired filename
+    img_object.save(os.path.join(app.config['UPLOAD_PATH'], custom_filename))
+
+    # Konversi citra ke 2d array
+    img_array = np.array(img_object)
+    
+    # Gunakan MiniBatchKMeans algoritma dengan mengatur cluster n sebanyak 7
+    k_warna = MiniBatchKMeans(n_clusters=7)
+    k_warna.fit(img_array.reshape(-1, 3))
+
+    # Hitung berapa banyak pixel per cluster
+    n_pixels = len(k_warna.labels_)
+    counter = Counter(k_warna.labels_)
+
+    # 2D array yang berisi nilai pixel RGB sejumlah n cluster = 7
+    rgb_int = k_warna.cluster_centers_
+
+    # Konversi ke float 0-1
+    rgb_float = np.array(rgb_int / 255, dtype=float)
+
+    # Ensure RGB values are within the correct range
+    rgb_float = np.clip(rgb_float, 0, 1)
+
+    # Konversi nilai RGB ke nilai HEXA dan simpan ke dalam list
+    hex_values = [rgb2hex(rgb_float[i, :]) for i in range(rgb_float.shape[0])]
+
+    prop_warna = {}
+
+    # Kalkulasi presentase tiap pixel warna
+    for i in counter:
+        prop_warna[i] = np.round(counter[i] / n_pixels, 4)
+
+    # Konversi dictionary ke dalam list
+    prop_warna = dict(sorted(prop_warna.items()))
+    props_list = [value for (key, value) in prop_warna.items()]
+
+    # Merge 2 list ke dalam sebuah dictionary
+    dict_warna = to_dictionary(props_list, hex_values)
+
+    # Sort/urutkan dict secara descending
+    sorted_dict = dict(sorted(dict_warna.items(), reverse=True))
+
+    return sorted_dict
+
+
 @app.route("/colorization", methods=["POST"])
 @nocache
 def colorization():
@@ -83,99 +136,16 @@ def colorization():
     # Gantilah 'path_to_grayscale_image.jpg' dengan path gambar grayscale Anda
     img, img_bw, out_img_eccv16, out_img_siggraph17 = colorize_and_save('static/img/img_normal.jpg', 'output_prefix', use_gpu=None)
             
-    # Buka citra yang akan diklasififikasi
-    img_object1 = Image.open(fp="static/img/eccv16.png", mode="r")
-
-    # Simpan citra dengan nama file yang sudah ditentukan
-    custom_filename1 = "color.png"  # Replace with your desired filename
-    img_object1.save(os.path.join(app.config['UPLOAD_PATH'], custom_filename1))
-
-    # Konversi citra ke 2d array
-    img_array1 = np.array(img_object1)
+   # Replace these paths with your grayscale image and output prefix
+    grayscale_image_path = 'static/img/img_normal.jpg'
+    output_prefix = 'output_prefix'
     
-    # Gunakan MiniBatchKMeans algoritma dengan mengatur cluster n sebanyak 7
-    k_warna1 = MiniBatchKMeans(n_clusters=7)
-    k_warna1.fit(img_array1.reshape(-1, 3))
+    img, img_bw, out_img_eccv16, out_img_siggraph17 = colorize_and_save(grayscale_image_path, output_prefix, use_gpu=None)
 
-    # Hitung berapa banyak pixel per cluster
-    n_pixels1 = len(k_warna1.labels_)
-    counter1 = Counter(k_warna1.labels_)
+    sorted_dict1 = process_image("static/img/eccv16.png")
+    sorted_dict2 = process_image("static/img/siggraph17.png")
 
-    # 2D array yang berisi nilai pixel RGB sejumlah n cluster = 7
-    rgb_int1 = k_warna1.cluster_centers_
-
-    # Konversi ke float 0-1
-    rgb_float1 = np.array(rgb_int1 / 255, dtype=float)
-
-    # Konversi nilai RGB ke nilai HEXA dan simpan ke dalam list
-    hex_values1 = [rgb2hex(rgb_float1[i, :]) for i in range(rgb_float1.shape[0])]
-
-    prop_warna1 = {}
-
-    # Kalkulasi presentase tiap pixel warna
-    for i in counter1:
-        prop_warna1[i] = np.round(counter1[i] / n_pixels1, 4)
-
-    # Konversi dictionary ke dalam list
-    prop_warna1= dict(sorted(prop_warna1.items()))
-    props_list1 = [value for (key, value) in prop_warna1.items()]
-
-    def to_dictionary(key, value):
-        return dict(zip(key, value))
-
-    # Merge 2 list ke dalam sebuah dictionary
-    dict_warna1 = to_dictionary(props_list1, hex_values1)
-
-    # Sort/urutkan dict secara descending
-    sorted_dict1 = dict(sorted(dict_warna1.items(), reverse=True))
-
-    # Buka citra yang akan diklasififikasi
-    img_object2 = Image.open(fp="static/img/siggraph17.png", mode="r")
-
-    # Simpan citra dengan nama file yang sudah ditentukan
-    custom_filename2 = "color.png"  # Replace with your desired filename
-    img_object2.save(os.path.join(app.config['UPLOAD_PATH'], custom_filename2))
-
-    # Konversi citra ke 2d array
-    img_array2 = np.array(img_object2)
-    
-    # Gunakan MiniBatchKMeans algoritma dengan mengatur cluster n sebanyak 7
-    k_warna2 = MiniBatchKMeans(n_clusters=7)
-    k_warna2.fit(img_array2.reshape(-1, 3))
-
-    # Hitung berapa banyak pixel per cluster
-    n_pixels2 = len(k_warna2.labels_)
-    counter2 = Counter(k_warna2.labels_)
-
-    # 2D array yang berisi nilai pixel RGB sejumlah n cluster = 7
-    rgb_int2 = k_warna2.cluster_centers_
-
-    # Konversi ke float 0-1
-    rgb_float2 = np.array(rgb_int2 / 255, dtype=float)
-
-    # Konversi nilai RGB ke nilai HEXA dan simpan ke dalam list
-    hex_values2 = [rgb2hex(rgb_float2[i, :]) for i in range(rgb_float2.shape[0])]
-
-    prop_warna2 = {}
-
-    # Kalkulasi presentase tiap pixel warna
-    for i in counter2:
-        prop_warna2[i] = np.round(counter2[i] / n_pixels2, 4)
-
-    # Konversi dictionary ke dalam list
-    prop_warna2 = dict(sorted(prop_warna2.items()))
-    props_list2 = [value for (key, value) in prop_warna2.items()]
-
-    def to_dictionary(key, value):
-        return dict(zip(key, value))
-
-    # Merge 2 list ke dalam sebuah dictionary
-    dict_warna2 = to_dictionary(props_list2, hex_values2)
-
-    # Sort/urutkan dict secara descending
-    sorted_dict2 = dict(sorted(dict_warna2.items(), reverse=True))
-            
-    return render_template("colorization.html", file_paths=["img/img_normal.jpg","img/eccv16.png","img/siggraph17.png"], colors1=sorted_dict1, colors2=sorted_dict2)
+    return render_template("colorization.html", file_paths=["img/img_normal.jpg", "img/eccv16.png", "img/siggraph17.png"], colors1=sorted_dict1, colors2=sorted_dict2)
 
 @app.route("/grayscale", methods=["POST"])
 @nocache
