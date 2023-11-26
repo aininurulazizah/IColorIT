@@ -74,17 +74,17 @@ def upload():
 def colorization():
     print(torch.version.cuda)
     # Gantilah 'path_to_grayscale_image.jpg' dengan path gambar grayscale Anda
-    img, img_bw, out_img_eccv16, out_img_siggraph17 = colorize_and_save('img/apple.jpg', 'output_prefix', use_gpu=True)
+    img, img_bw, out_img_eccv16, out_img_siggraph17 = colorize_and_save('static/img/img_normal.jpg', 'output_prefix', use_gpu=None)
 
     # Simpan hasil ke direktori static/img/
     output_folder = 'static/img'
-    img_path = f'{output_folder}/{output_prefix}_original.jpg'
-    img_bw_path = f'{output_folder}/{output_prefix}_input.jpg'
-    out_img_eccv16_path = f'{output_folder}/{output_prefix}_eccv16.jpg'
-    out_img_siggraph17_path = f'{output_folder}/{output_prefix}_siggraph17.jpg'
+    img_path = f'{output_folder}/original.jpg'
+    img_bw_path = f'{output_folder}/input.jpg'
+    out_img_eccv16_path = f'{output_folder}/eccv16.jpg'
+    out_img_siggraph17_path = f'{output_folder}/siggraph17.jpg'
 
     
-    return render_template("colorization.html", file_paths=["img/img_normal.jpg"])
+    return render_template("colorization.html", file_paths=["img/img_normal.jpg","img/eccv16.png","img/siggraph17.png"])
 
 @app.route("/grayscale", methods=["POST"])
 @nocache
